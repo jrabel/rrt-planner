@@ -19,6 +19,7 @@ class RRT {
         this.treeNodeArray = [];
         this.startNode = this.createTreeNode(start, null);
         this.goalNode = null;
+        this.solutionFound = false;
 
         this.statesGroup = new THREE.Group();
         this.rrtGroup = new THREE.Group();
@@ -129,8 +130,7 @@ class RRT {
     }
 
     buildRRT() {
-        console.log(this.startNode);
-
+        this.solutionFound = false;
         var iterations = 10000;
         var nodesCreated = 0;
         while (nodesCreated < iterations) {
@@ -139,87 +139,13 @@ class RRT {
             var newState = this.createNewState(randomState, nearestNode);
             if (newState) {
                 var newNode = this.createTreeNode(newState, nearestNode);
-                if (this.attemptConnectionToGoalState(newNode))
+                if (this.attemptConnectionToGoalState(newNode)) {
+                    this.solutionFound = true;
                     break;
+                }
                 nodesCreated++;
             }
         }
         console.log("Solution found in " + nodesCreated + " iterations.")
-        console.log(this.startNode);
     }
-
-    drawGoalState(scene) {
-        var geometry = new THREE.SphereGeometry(0.25, 20, 20);
-        var material = new THREE.MeshStandardMaterial({ color: 0x00FF00 });
-        var goalStateMesh = new THREE.Mesh(geometry, material);
-        goalStateMesh.position.set(this.goal.x, this.goal.y, 0.0);
-        goalStateMesh.position.needsUpdate = true;
-        console.log(goalStateMesh);
-        scene.add(goalStateMesh);
-    }
-
-    drawSolutionPath(scene) {
-        var solutionPath = new THREE.Group();
-
-        var pointMaterial = new THREE.PointsMaterial({ color: 0x00FF00, size: 0.2 });
-        var lineMaterial = new THREE.LineBasicMaterial({ color: 0x00FF00 });
-
-        var node = this.goalNode;
-
-        while (node.parent) {
-            console.log(node.parent);
-            var pointGeometry = new THREE.Geometry();
-            pointGeometry.vertices.push(new THREE.Vector3(node.state.x, node.state.y, 0));
-            var point = new THREE.Points(pointGeometry, pointMaterial);
-            solutionPath.add(point);
-
-            var points = [];
-            points.push(new THREE.Vector3(node.state.x, node.state.y, 0));
-            points.push(new THREE.Vector3(node.parent.state.x, node.parent.state.y, 0));
-            var lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
-            var line = new THREE.Line(lineGeometry, lineMaterial);
-            solutionPath.add(line);
-
-            node = node.parent;
-        }
-        scene.add(solutionPath);
-    }
-
-    drawRRT(scene) {
-        var pointMaterial = new THREE.PointsMaterial({ color: 0x000000, size: 0.1 });
-        var lineMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
-
-        var nodes = [];
-        nodes.push(this.startNode);
-
-        while (nodes.length > 0) {
-            var node = nodes.pop();
-
-            var pointGeometry = new THREE.Geometry();
-            pointGeometry.vertices.push(new THREE.Vector3(node.state.x, node.state.y, 0));
-            var point = new THREE.Points(pointGeometry, pointMaterial);
-            this.rrtGroup.add(point);
-
-            for (var i = 0; i < node.children.length; i++) {
-                var child = node.children[i];
-                nodes.push(child);
-
-                var points = [];
-                points.push(new THREE.Vector3(node.state.x, node.state.y, 0));
-                points.push(new THREE.Vector3(child.state.x, child.state.y, 0));
-                var lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
-                var line = new THREE.Line(lineGeometry, lineMaterial);
-                this.rrtGroup.add(line);
-            }
-        }
-
-        scene.add(this.rrtGroup);
-
-        this.drawGoalState(scene);
-        if (this.goalNode)
-            this.drawSolutionPath(scene);
-
-    }
-
-
 }

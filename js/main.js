@@ -1,11 +1,11 @@
 var container = document.getElementById('container');
 var camera, controls, scene, renderer;
 var clock = new THREE.Clock();
-var terrainGenerator;
 
 var collisionDetector;
+var planner;
+var treeAnimator;
 
-var boxes = [];
 
 init();
 animate();
@@ -51,8 +51,10 @@ function init() {
         y: [0, (width - 1) * cellSize]
     };
 
-    var planner = new RRT(start, goal, limits, collisionDetector);
-    planner.drawRRT(scene);
+    planner = new RRT(start, goal, limits, collisionDetector);
+    treeAnimator = new TreeAnimator(planner.treeNodeArray);
+    treeAnimator.initializeAnimator();
+    treeAnimator.drawGoalState(scene);
 }
 
 function createScene() {
@@ -100,11 +102,17 @@ function onWindowResize() {
 }
 
 function animate() {
+
+    treeAnimator.drawNextTreeNode(scene);
+    console.log(planner.solutionFound);
+    if (!treeAnimator.drawing && planner.solutionFound)
+        treeAnimator.drawSolutionPath(scene);
+
     requestAnimationFrame(animate);
     render();
 }
 
 function render() {
-    // controls.update(clock.getDelta());
+    controls.update(clock.getDelta());
     renderer.render(scene, camera);
 }
